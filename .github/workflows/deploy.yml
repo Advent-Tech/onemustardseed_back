@@ -48,8 +48,9 @@ jobs:
           echo "🐳 Rebuilding backend container on VPS..."
           ssh -i ~/.ssh/id_deploy -p "$PORT" -o StrictHostKeyChecking=no "$USER@$HOST" "
             cd $DEPLOY_PATH
+            podman rm -f oms-backend 2>/dev/null || true
             docker compose up -d --no-deps --build backend
-            docker image prune -f
+            podman image prune -a -f
             sleep 3
             podman ps --filter name=oms-backend
           "
