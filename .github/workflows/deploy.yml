@@ -50,8 +50,8 @@ jobs:
             cd $DEPLOY_PATH
             docker compose up -d --no-deps --build backend
             docker image prune -f
-            sleep 4
-            docker compose ps backend
+            sleep 3
+            podman ps --filter name=oms-backend
           "
 
           echo "=========================================="
