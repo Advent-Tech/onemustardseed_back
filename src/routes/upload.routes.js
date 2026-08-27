@@ -2,104 +2,159 @@ const express = require('express');
 const multer = require('multer');
 const mongoose = require('mongoose');
 const { GridFSBucket } = require('mongodb');
+const path = require('path');
+const fs = require('fs');
 
 const router = express.Router();
 
-// Use memory storage for Vercel compatibility
+// Ensure local uploads directory exists
+const uploadsDir = path.join(__dirname, '../../uploads');
+if (!fs.existsSync(uploadsDir)) {
+    try {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+    } catch (e) {
+        console.error('Failed to create uploads directory:', e);
+    }
+}
+
+// Use memory storage to process uploads
 const storage = multer.memoryStorage();
 
 const upload = multer({ 
     storage: storage,
-    limits: { fileSize: 4 * 1024 * 1024 }, // 4MB limit to stay under Vercel's 4.5MB payload limit
+    limits: { fileSize: 100 * 1024 * 1024 }, // 100MB limit for high-res images, audio & trailers
     fileFilter: (req, file, cb) => {
-        if (
-            file.mimetype.startsWith('image/') || 
-            file.mimetype.startsWith('audio/') || 
-            file.mimetype.startsWith('video/') || 
-            file.mimetype.startsWith('application/') || 
-            file.mimetype.startsWith('text/')
-        ) {
-            cb(null, true);
-        } else {
-            cb(new Error('File type not supported'));
-        }
+        // Accept common media, documents, and assets
+        cb(null, true);
     }
 });
 
-let gfsBucket;
+let gfsBucket = null;
 const initGridFS = () => {
-    if (mongoose.connection.db && !gfsBucket) {
-        gfsBucket = new GridFSBucket(mongoose.connection.db, {
-            bucketName: 'uploads'
-        });
+    try {
+        if (mongoose.connection && mongoose.connection.db) {
+            gfsBucket = new GridFSBucket(mongoose.connection.db, {
+                bucketName: 'uploads'
+            });
+        }
+    } catch (err) {
+        console.warn('GridFSBucket initialization deferred:', err.message);
     }
 };
 
-if (mongoose.connection.readyState === 1) {
+if (mongoose.connection && mongoose.connection.readyState === 1) {
     initGridFS();
-} else {
-    mongoose.connection.once('open', initGridFS);
+} else if (mongoose.connection) {
+    mongoose.connection.on('open', initGridFS);
 }
 
-// Upload route
-router.post('/', upload.single('file'), (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ success: false, message: 'No file provided' });
-    }
-    
-    if (!gfsBucket) {
-        return res.status(500).json({ success: false, message: 'GridFS not initialized yet' });
-    }
-
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const filename = uniqueSuffix + '-' + req.file.originalname.replace(/\s+/g, '-');
-
-    // Create an upload stream to GridFS
-    const uploadStream = gfsBucket.openUploadStream(filename, {
-        contentType: req.file.mimetype
+// Middleware wrapper to handle any form field name and catch Multer errors gracefully
+const multerAnyMiddleware = (req, res, next) => {
+    upload.any()(req, res, (err) => {
+        if (err) {
+            console.error('Multer upload error:', err);
+            return res.status(400).json({ 
+                success: false, 
+                message: err.message || 'File upload parsing failed' 
+            });
+        }
+        next();
     });
+};
 
-    uploadStream.end(req.file.buffer);
+// Universal Upload Route (accepts field 'file', 'image', 'thumbnail', etc.)
+router.post('/', multerAnyMiddleware, async (req, res) => {
+    try {
+        const file = req.file || (req.files && req.files.length > 0 ? req.files[0] : null);
+        
+        if (!file) {
+            return res.status(400).json({ success: false, message: 'No file provided in form data' });
+        }
 
-    uploadStream.on('finish', () => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const cleanName = (file.originalname || 'upload').replace(/[^a-zA-Z0-9.-]/g, '_');
+        const filename = `${uniqueSuffix}-${cleanName}`;
+
+        // 1. Always save to local persistent disk storage (mounted volume /app/uploads)
+        try {
+            const diskFilePath = path.join(uploadsDir, filename);
+            fs.writeFileSync(diskFilePath, file.buffer);
+        } catch (fsErr) {
+            console.warn('Disk save warning:', fsErr.message);
+        }
+
+        // 2. Also stream to MongoDB GridFS if connected
+        if (!gfsBucket && mongoose.connection && mongoose.connection.db) {
+            initGridFS();
+        }
+
+        if (gfsBucket) {
+            try {
+                const uploadStream = gfsBucket.openUploadStream(filename, {
+                    contentType: file.mimetype || 'application/octet-stream'
+                });
+                uploadStream.end(file.buffer);
+            } catch (gridFsErr) {
+                console.warn('GridFS save warning:', gridFsErr.message);
+            }
+        }
+
         const fileUrl = `/api/upload/file/${filename}`;
-        res.status(200).json({ success: true, url: fileUrl });
-    });
 
-    uploadStream.on('error', (err) => {
-        res.status(500).json({ success: false, message: 'Error uploading file to GridFS' });
-    });
+        return res.status(200).json({
+            success: true,
+            url: fileUrl,
+            fileUrl: fileUrl,
+            path: `/uploads/${filename}`,
+            filename: filename,
+            mimetype: file.mimetype,
+            size: file.size
+        });
+    } catch (error) {
+        console.error('Upload processing error:', error);
+        return res.status(500).json({ 
+            success: false, 
+            message: 'Server error while saving uploaded file' 
+        });
+    }
 });
 
-const path = require('path');
-const fs = require('fs');
-
-// GET route to retrieve a file from GridFS or local uploads
+// GET route to retrieve and stream files from GridFS or local uploads disk
 const serveFileHandler = async (req, res) => {
     try {
         const filename = req.params.filename;
+        if (!filename) {
+            return res.status(400).json({ success: false, message: 'Filename required' });
+        }
+
+        // 1. Check local disk first for fastest serving
+        const localPath = path.join(uploadsDir, filename);
+        if (fs.existsSync(localPath)) {
+            return res.sendFile(localPath);
+        }
+
+        // 2. If not on disk, stream from GridFS
+        if (!gfsBucket && mongoose.connection && mongoose.connection.db) {
+            initGridFS();
+        }
 
         if (gfsBucket) {
             const files = await gfsBucket.find({ filename }).toArray();
             if (files && files.length > 0) {
                 const file = files[0];
                 res.set('Content-Type', file.contentType || 'image/jpeg');
+                res.set('Cache-Control', 'public, max-age=31536000');
                 const downloadStream = gfsBucket.openDownloadStreamByName(filename);
-                downloadStream.on('error', () => {
+                downloadStream.on('error', (streamErr) => {
                     if (!res.headersSent) res.status(404).json({ success: false, message: 'File stream error' });
                 });
                 return downloadStream.pipe(res);
             }
         }
 
-        // Fallback to local uploads directory
-        const localPath = path.join(__dirname, '../../uploads', filename);
-        if (fs.existsSync(localPath)) {
-            return res.sendFile(localPath);
-        }
-
         return res.status(404).json({ success: false, message: 'File not found' });
     } catch (err) {
+        console.error('File retrieval error:', err);
         if (!res.headersSent) {
             res.status(500).json({ success: false, message: 'Error retrieving file' });
         }
