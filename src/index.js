@@ -28,6 +28,8 @@ const podcastRoutes = require('./routes/podcast.routes');
 const prayerRoutes = require('./routes/prayer.routes');
 const promoCodeRoutes = require('./routes/promoCode.routes');
 const paymentRoutes = require('./routes/payment.routes');
+const formRoutes = require('./routes/form.routes');
+const albumRoutes = require('./routes/album.routes');
 const path = require('path');
 
 const app = express();
@@ -96,6 +98,8 @@ app.use('/api/podcast', podcastRoutes);
 app.use('/api/prayer', prayerRoutes);
 app.use('/api/promocodes', promoCodeRoutes);
 app.use('/api/payment', paymentRoutes);
+app.use('/api/forms', formRoutes);
+app.use('/api/albums', albumRoutes);
 
 // Default route
 app.get('/', (req, res) => {

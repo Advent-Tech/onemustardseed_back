@@ -144,5 +144,67 @@ router.delete('/:id', protect, authorize('admin'), async (req, res) => {
   }
 });
 
+// POST subscribe to newsletter / e-book (public)
+const Subscriber = require('../models/Subscriber');
+const { Resend } = require('resend');
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+router.post('/subscribe', async (req, res) => {
+  try {
+    const { email, list, source } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email is required' });
+    }
+
+    const existing = await Subscriber.findOne({ email: email.toLowerCase() });
+    if (existing) {
+      return res.json({ success: true, message: 'You are already subscribed!' });
+    }
+
+    const subscriber = await Subscriber.create({
+      email,
+      list: list || 'General Newsletter',
+      source: source || 'Website'
+    });
+
+    // If free e-book signup, notify angelisse@onemustardseed.com
+    if ((list || '').toLowerCase().includes('book')) {
+      try {
+        await resend.emails.send({
+          from: 'OMS Free Book Offer <onboarding@resend.dev>',
+          to: 'angelisse@onemustardseed.com',
+          replyTo: email,
+          subject: `New Free E-Book Request: ${email}`,
+          html: `
+            <div style="font-family:sans-serif;padding:20px;background:#FAF7EE;color:#1a2f24;">
+              <h2 style="color:#D4AF37;">New Free E-Book Request</h2>
+              <p>A visitor requested the free Firewalkers e-book:</p>
+              <p><strong>Subscriber Email:</strong> <a href="mailto:${email}">${email}</a></p>
+              <p><strong>List / Campaign:</strong> ${list}</p>
+            </div>
+          `
+        });
+      } catch (e) {
+        console.error("Free Book Lead Email Error:", e.message);
+      }
+    }
+
+    res.status(201).json({ success: true, message: 'Thank you for subscribing!', data: subscriber });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET all subscribers (admin)
+router.get('/subscribers/list', protect, authorize('admin'), async (req, res) => {
+  try {
+    const subscribers = await Subscriber.find().sort({ createdAt: -1 });
+    res.json({ success: true, data: subscribers });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 module.exports = router;
+
 

@@ -167,7 +167,7 @@ exports.submitForm = async (req, res) => {
     const { formType, parentName, parentEmail, childName, location, content, fileUrl } = req.body;
     
     const setting = await Setting.findOne({ key: 'podcast_banner' });
-    const toEmail = setting?.value?.submissionEmail || 'omimanmaybe@gmail.com';
+    const toEmail = setting?.value?.submissionEmail || 'angelisse@onemustardseed.com';
 
     let messageHtml = `
       <h1>New Podcast Submission: ${formType}</h1>

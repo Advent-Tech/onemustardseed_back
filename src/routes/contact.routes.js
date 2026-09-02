@@ -98,9 +98,13 @@ router.post('/', async (req, res) => {
     `;
 
     try {
+      const cat = (category || '').toLowerCase();
+      const isGivingOrSupport = cat.includes('giving') || cat.includes('sponsor') || cat.includes('support') || cat.includes('donation');
+      const targetEmail = isGivingOrSupport ? 'rich@onemustardseed.com' : (process.env.ADMIN_EMAIL || 'leo@onemustardseed.com');
+
       await resend.emails.send({
         from: 'OMS Contact Form <onboarding@resend.dev>',
-        to: process.env.ADMIN_EMAIL || 'leo@onemustardseed.com',
+        to: targetEmail,
         replyTo: email,
         subject: `New OMS Inquiry: ${category} - ${firstName} ${lastName}`,
         html: htmlContent
