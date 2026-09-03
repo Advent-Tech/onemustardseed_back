@@ -45,8 +45,10 @@ router.get('/files/:id', async (req, res) => {
       return res.status(404).json({ message: 'File not found' });
     }
     
-    res.set('Content-Type', files[0].contentType);
-    res.set('Content-Disposition', `attachment; filename="${files[0].filename}"`);
+    const file = files[0];
+    const mimeType = file.contentType || (file.filename && file.filename.endsWith('.pdf') ? 'application/pdf' : 'application/octet-stream');
+    res.set('Content-Type', mimeType);
+    res.set('Content-Disposition', `attachment; filename="${file.filename || 'resource.file'}"`);
     res.set('Cache-Control', 'public, max-age=31536000');
     const downloadStream = bucket.openDownloadStream(fileId);
     downloadStream.pipe(res);
