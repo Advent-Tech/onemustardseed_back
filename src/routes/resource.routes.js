@@ -77,14 +77,14 @@ router.post('/', protect, authorize('admin'), async (req, res) => {
       const contentType = payload.fileUrl.substring(5, payload.fileUrl.indexOf(';'));
       const ext = contentType === 'application/pdf' ? '.pdf' : '.file';
       const fileId = await saveToGridFS(payload.fileUrl, `${payload.title}-file${ext}`, contentType);
-      payload.fileUrl = `${baseUrl}/api/resources/files/${fileId}`;
+      payload.fileUrl = `/api/resources/files/${fileId}`;
     }
 
     if (payload.featuredImage && payload.featuredImage.startsWith('data:')) {
       const contentType = payload.featuredImage.substring(5, payload.featuredImage.indexOf(';'));
       const ext = contentType.includes('/') ? `.${contentType.split('/')[1]}` : '.jpg';
       const fileId = await saveToGridFS(payload.featuredImage, `${payload.title}-image${ext}`, contentType);
-      payload.featuredImage = `${baseUrl}/api/resources/files/${fileId}`;
+      payload.featuredImage = `/api/resources/files/${fileId}`;
     }
 
     const resource = new Resource(payload);
@@ -100,20 +100,19 @@ router.post('/', protect, authorize('admin'), async (req, res) => {
 router.put('/:id', protect, authorize('admin'), async (req, res) => {
   try {
     const payload = { ...req.body };
-    const baseUrl = `${req.protocol}://${req.get('host')}`;
 
     if (payload.fileUrl && payload.fileUrl.startsWith('data:')) {
       const contentType = payload.fileUrl.substring(5, payload.fileUrl.indexOf(';'));
       const ext = contentType === 'application/pdf' ? '.pdf' : '.file';
       const fileId = await saveToGridFS(payload.fileUrl, `${payload.title || 'updated'}-file${ext}`, contentType);
-      payload.fileUrl = `${baseUrl}/api/resources/files/${fileId}`;
+      payload.fileUrl = `/api/resources/files/${fileId}`;
     }
 
     if (payload.featuredImage && payload.featuredImage.startsWith('data:')) {
       const contentType = payload.featuredImage.substring(5, payload.featuredImage.indexOf(';'));
       const ext = contentType.includes('/') ? `.${contentType.split('/')[1]}` : '.jpg';
       const fileId = await saveToGridFS(payload.featuredImage, `${payload.title || 'updated'}-image${ext}`, contentType);
-      payload.featuredImage = `${baseUrl}/api/resources/files/${fileId}`;
+      payload.featuredImage = `/api/resources/files/${fileId}`;
     }
 
     const updated = await Resource.findByIdAndUpdate(req.params.id, payload, { new: true });

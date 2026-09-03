@@ -60,8 +60,8 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ limit: '10mb', extended: true }));
+app.use(express.json({ limit: '200mb' }));
+app.use(express.urlencoded({ limit: '200mb', extended: true }));
 app.use(cookieParser());
 
 // Ensure uploads directory exists and serve statically
@@ -113,8 +113,9 @@ app.get('/api/health', (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({ success: false, message: 'Server Error' });
+    console.error(err.stack || err.message);
+    const status = err.status || err.statusCode || 500;
+    res.status(status).json({ success: false, message: err.message || 'Server Error' });
 });
 
 const PORT = process.env.PORT || 5000;
