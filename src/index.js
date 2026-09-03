@@ -59,6 +59,13 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
+// Rewrite accidental duplicate /api/api prefixes
+app.use((req, res, next) => {
+    if (req.url.startsWith('/api/api/')) {
+        req.url = req.url.replace(/^\/api\/api\//, '/api/');
+    }
+    next();
+});
 
 app.use(express.json({ limit: '200mb' }));
 app.use(express.urlencoded({ limit: '200mb', extended: true }));
