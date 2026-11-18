@@ -57,9 +57,22 @@ const eventSchema = new mongoose.Schema({
         type: String,
         default: 'Global'
     },
+    // Optional now that ticketing happens on Zeffy.
     price: {
         type: String,
-        required: [true, 'Please add a base ticket price']
+        default: ''
+    },
+    // Zeffy (or any) ticket page. Drives the "Buy Tickets" button on /events.
+    ticketUrl: {
+        type: String,
+        trim: true,
+        default: ''
+    },
+    // Free-text dates shown on the card, e.g. "Mar 6–8, 2027". Falls back to `date`.
+    dateLabel: {
+        type: String,
+        trim: true,
+        default: ''
     },
     capacity: {
         type: Number,

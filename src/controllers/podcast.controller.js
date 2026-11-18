@@ -184,7 +184,7 @@ exports.submitForm = async (req, res) => {
     }
 
     await resend.emails.send({
-      from: 'OMS Podcast <onboarding@resend.dev>',
+      from: `OMS Podcast <${process.env.MAIL_FROM_ADDRESS || 'onboarding@resend.dev'}>`,
       to: toEmail,
       replyTo: parentEmail,
       subject: `New Podcast Submission: ${formType.toUpperCase()} - ${childName}`,

@@ -39,7 +39,7 @@ router.post('/send-update', protect, authorize('admin'), async (req, res) => {
     const targetEmail = isIndividual ? segment : (process.env.ADMIN_EMAIL || 'leo@onemustardseed.com');
     
     const emailConfig = {
-      from: 'OMS Donor Relations <onboarding@resend.dev>', // Change this to your verified domain later (e.g., updates@onemustardseed.com)
+      from: `OMS Donor Relations <${process.env.MAIL_FROM_ADDRESS || 'onboarding@resend.dev'}>`, // Change this to your verified domain later (e.g., updates@onemustardseed.com)
       to: targetEmail,
       subject: subject,
       html: htmlContent
@@ -64,7 +64,7 @@ router.post('/bulk-receipt', protect, authorize('admin'), async (req, res) => {
   try {
     const adminEmail = process.env.ADMIN_EMAIL || 'leo@onemustardseed.com';
     await resend.emails.send({
-      from: 'OMS Finance <onboarding@resend.dev>',
+      from: `OMS Finance <${process.env.MAIL_FROM_ADDRESS || 'onboarding@resend.dev'}>`,
       to: adminEmail,
       subject: 'Bulk Receipts Processed',
       html: `<div><p>Bulk receipts have been successfully processed and sent to the latest donors.</p></div>`

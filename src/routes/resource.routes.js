@@ -175,7 +175,7 @@ router.post('/download/:id', async (req, res) => {
     // Send email using Resend
     try {
       await resend.emails.send({
-        from: 'One Mustard Seed <onboarding@resend.dev>',
+        from: `One Mustard Seed <${process.env.MAIL_FROM_ADDRESS || 'onboarding@resend.dev'}>`,
         to: email, 
         subject: `Your Free Resource: ${resource.title}`,
         html: `

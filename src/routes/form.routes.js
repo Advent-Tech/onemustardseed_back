@@ -83,7 +83,7 @@ router.post('/birthday-club', async (req, res) => {
 
     try {
       await resend.emails.send({
-        from: "Rich's Birthday Club <onboarding@resend.dev>",
+        from: `Rich's Birthday Club <${process.env.MAIL_FROM_ADDRESS || 'onboarding@resend.dev'}>`,
         to: 'angelisse@onemustardseed.com',
         replyTo: parentEmail,
         subject: `New Birthday Club Signup: ${childName}`,
@@ -175,7 +175,7 @@ router.post('/premiere-partner', async (req, res) => {
 
     try {
       await resend.emails.send({
-        from: 'OMS Films <onboarding@resend.dev>',
+        from: `OMS Films <${process.env.MAIL_FROM_ADDRESS || 'onboarding@resend.dev'}>`,
         to: 'leo@onemustardseed.com',
         replyTo: email,
         subject: `New Premiere Partner Registration: ${church}`,

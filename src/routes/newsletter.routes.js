@@ -171,7 +171,7 @@ router.post('/subscribe', async (req, res) => {
     if ((list || '').toLowerCase().includes('book')) {
       try {
         await resend.emails.send({
-          from: 'OMS Free Book Offer <onboarding@resend.dev>',
+          from: `OMS Free Book Offer <${process.env.MAIL_FROM_ADDRESS || 'onboarding@resend.dev'}>`,
           to: 'angelisse@onemustardseed.com',
           replyTo: email,
           subject: `New Free E-Book Request: ${email}`,

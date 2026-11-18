@@ -103,7 +103,7 @@ router.post('/', async (req, res) => {
       const targetEmail = isGivingOrSupport ? 'rich@onemustardseed.com' : (process.env.ADMIN_EMAIL || 'leo@onemustardseed.com');
 
       await resend.emails.send({
-        from: 'OMS Contact Form <onboarding@resend.dev>',
+        from: `OMS Contact Form <${process.env.MAIL_FROM_ADDRESS || 'onboarding@resend.dev'}>`,
         to: targetEmail,
         replyTo: email,
         subject: `New OMS Inquiry: ${category} - ${firstName} ${lastName}`,
