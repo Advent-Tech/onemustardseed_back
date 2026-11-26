@@ -2,8 +2,8 @@ const PodcastSeason = require('../models/PodcastSeason');
 const PodcastPlatform = require('../models/PodcastPlatform');
 const PodcastEpisode = require('../models/PodcastEpisode');
 const Setting = require('../models/Setting');
-const { Resend } = require('resend');
-const resend = new Resend(process.env.RESEND_API_KEY);
+const { getResend } = require('../utils/clients');
+const resend = getResend();
 
 
 exports.getAllSeasons = async (req, res) => {

@@ -30,6 +30,7 @@ const promoCodeRoutes = require('./routes/promoCode.routes');
 const paymentRoutes = require('./routes/payment.routes');
 const formRoutes = require('./routes/form.routes');
 const albumRoutes = require('./routes/album.routes');
+const videoRoutes = require('./routes/video.routes');
 const path = require('path');
 
 const app = express();
@@ -56,7 +57,7 @@ app.use(cors({
         return callback(null, true); // Permissive fallback if domains not yet configured
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 // Rewrite accidental duplicate /api/api prefixes
@@ -77,7 +78,15 @@ const fs = require('fs');
 if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
 }
-app.use('/uploads', express.static(uploadsDir));
+app.use('/uploads', express.static(uploadsDir, {
+    // Never let an uploaded file run as a web page on our domain
+    setHeaders: (res, filePath) => {
+        res.setHeader('X-Content-Type-Options', 'nosniff');
+        if (!/\.(jpe?g|png|webp|gif|avif|mp3|m4a|wav|ogg|oga|aac|mp4|mov|webm|m4v|pdf)$/i.test(filePath)) {
+            res.setHeader('Content-Disposition', 'attachment');
+        }
+    }
+}));
 
 
 // Routes
@@ -107,6 +116,7 @@ app.use('/api/promocodes', promoCodeRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/forms', formRoutes);
 app.use('/api/albums', albumRoutes);
+app.use('/api/videos', videoRoutes);
 
 // Default route
 app.get('/', (req, res) => {

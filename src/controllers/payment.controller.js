@@ -1,9 +1,10 @@
-const stripeKids = require('stripe')(process.env.STRIPE_KIDS_SECRET_KEY || process.env.STRIPE_SECRET_KEY);
-const stripePrayer = require('stripe')(process.env.STRIPE_PRAYER_SECRET_KEY || process.env.STRIPE_SECRET_KEY);
-const stripeEvents = require('stripe')(process.env.STRIPE_EVENTS_SECRET_KEY || process.env.STRIPE_SECRET_KEY);
-const stripeDonations = require('stripe')(process.env.STRIPE_DONATIONS_SECRET_KEY || process.env.STRIPE_SECRET_KEY);
-const stripeFilms = require('stripe')(process.env.STRIPE_FILMS_SECRET_KEY || process.env.STRIPE_SECRET_KEY);
-const stripeDefault = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const { getStripe } = require('../utils/clients');
+const stripeKids = getStripe(process.env.STRIPE_KIDS_SECRET_KEY || process.env.STRIPE_SECRET_KEY, 'STRIPE_KIDS_SECRET_KEY');
+const stripePrayer = getStripe(process.env.STRIPE_PRAYER_SECRET_KEY || process.env.STRIPE_SECRET_KEY, 'STRIPE_PRAYER_SECRET_KEY');
+const stripeEvents = getStripe(process.env.STRIPE_EVENTS_SECRET_KEY || process.env.STRIPE_SECRET_KEY, 'STRIPE_EVENTS_SECRET_KEY');
+const stripeDonations = getStripe(process.env.STRIPE_DONATIONS_SECRET_KEY || process.env.STRIPE_SECRET_KEY, 'STRIPE_DONATIONS_SECRET_KEY');
+const stripeFilms = getStripe(process.env.STRIPE_FILMS_SECRET_KEY || process.env.STRIPE_SECRET_KEY, 'STRIPE_FILMS_SECRET_KEY');
+const stripeDefault = getStripe(process.env.STRIPE_SECRET_KEY, 'STRIPE_SECRET_KEY');
 
 const getStripeClient = (type) => {
   switch (type) {

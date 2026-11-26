@@ -30,7 +30,8 @@ const sendTokenResponse = (user, statusCode, res) => {
 
 exports.register = async (req, res) => {
     try {
-        const { name, email, password, role } = req.body;
+        // SECURITY: `role` from the request body is ignored. Admins are promoted from the admin Users page.
+        const { name, email, password } = req.body;
 
         const existingUser = await User.findOne({ email });
         if (existingUser) {
@@ -41,7 +42,7 @@ exports.register = async (req, res) => {
             name,
             email,
             password,
-            role: role || 'user'
+            role: 'user'
         });
 
         sendTokenResponse(user, 201, res);

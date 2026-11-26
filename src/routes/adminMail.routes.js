@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { Resend } = require('resend');
+const { getResend } = require('../utils/clients');
 const Donation = require('../models/Donation');
 const { protect, authorize } = require('../middlewares/auth.middleware');
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = getResend();
 
 // POST send-update (admin only)
 router.post('/send-update', protect, authorize('admin'), async (req, res) => {

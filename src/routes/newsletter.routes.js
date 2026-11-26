@@ -146,8 +146,8 @@ router.delete('/:id', protect, authorize('admin'), async (req, res) => {
 
 // POST subscribe to newsletter / e-book (public)
 const Subscriber = require('../models/Subscriber');
-const { Resend } = require('resend');
-const resend = new Resend(process.env.RESEND_API_KEY);
+const { getResend } = require('../utils/clients');
+const resend = getResend();
 
 router.post('/subscribe', async (req, res) => {
   try {

@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { Resend } = require('resend');
+const { getResend } = require('../utils/clients');
 const Contact = require('../models/Contact');
 const { protect, authorize } = require('../middlewares/auth.middleware');
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = getResend();
 
 // GET all contact messages (admin only)
 router.get('/', protect, authorize('admin'), async (req, res) => {

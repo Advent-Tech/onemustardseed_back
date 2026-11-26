@@ -2,12 +2,12 @@ const express = require('express');
 const router = express.Router();
 const Resource = require('../models/Resource');
 const Lead = require('../models/Lead');
-const { Resend } = require('resend');
+const { getResend } = require('../utils/clients');
 const mongoose = require('mongoose');
 const { GridFSBucket } = require('mongodb');
 const { protect, authorize } = require('../middlewares/auth.middleware');
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = getResend();
 
 // Helper to save base64 to GridFS
 async function saveToGridFS(base64String, filename, contentType) {

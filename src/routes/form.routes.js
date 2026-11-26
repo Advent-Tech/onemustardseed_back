@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { Resend } = require('resend');
+const { getResend } = require('../utils/clients');
 const BirthdaySubmission = require('../models/BirthdaySubmission');
 const PremierePartner = require('../models/PremierePartner');
 const { protect, authorize } = require('../middlewares/auth.middleware');
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = getResend();
 
 // ── Rich's Birthday Club Form ──
 router.post('/birthday-club', async (req, res) => {

@@ -49,19 +49,14 @@ const optionalAuth = async (req, res, next) => {
     }
 
     if (!token) {
-        console.log("optionalAuth: no token, calling next");
         return next();
     }
 
     try {
-        console.log("optionalAuth: verifying token", token);
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        console.log("optionalAuth: token verified, finding user");
         req.user = await User.findById(decoded.id);
-        console.log("optionalAuth: user found, calling next");
         next();
     } catch (err) {
-        console.log("optionalAuth: err catch, calling next", err.message);
         next();
     }
 };
